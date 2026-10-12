@@ -108,6 +108,9 @@ def ecwid_api(store_id, method, path, data=None, token=None):
         config = load_store_config(store_id)
         token = config.get("ecwid_token")
     if not token:
+        # Fallback: use the app's own API token from env (custom single-store app)
+        token = os.environ.get("ECWID_API_TOKEN", "") or os.environ.get("ECWID_CLIENT_SECRET", "")
+    if not token:
         raise Exception("Tienda no conectada. Reinstala la app.")
     url = f"{ECWID_API_BASE}/{store_id}{path}"
     body = json.dumps(data).encode() if data is not None else None
