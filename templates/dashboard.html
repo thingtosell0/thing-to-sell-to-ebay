@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Panel · eBay Integration{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Panel de sincronización</h2>
+  <div class="stat"><div class="num">{{ published_count }}</div><div class="lbl">Publicados en eBay</div></div>
+  <div class="stat"><div class="num">{{ ebay_config.merchant_location_key or '—' }}</div><div class="lbl">Ubicación</div></div>
+</div>
+
+<div class="card">
+  <h3>Productos publicados</h3>
+  {% if published %}
+  <table>
+    <tr><th>Producto Ecwid</th><th>SKU eBay</th><th>Listing ID</th></tr>
+    {% for pid, info in published.items() %}
+    <tr>
+      <td>{{ pid }}</td>
+      <td>{{ info.ebay_sku }}</td>
+      <td><a href="https://www.ebay.com/itm/{{ info.listing_id }}" target="_blank">{{ info.listing_id }}</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p>Todavía no hay productos publicados. Ve a <a href="{{ url_for('products', store_id=store_id) }}">Productos</a> para elegir cuáles publicar.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h3>Configuración eBay actual</h3>
+  <table>
+    <tr><th>Política</th><th>ID</th></tr>
+    <tr><td>Pago</td><td>{{ ebay_config.payment_policy_id }}</td></tr>
+    <tr><td>Envío</td><td>{{ ebay_config.fulfillment_policy_id }}</td></tr>
+    <tr><td>Devolución</td><td>{{ ebay_config.return_policy_id }}</td></tr>
+    <tr><td>Categoría</td><td>{{ ebay_config.category_id }}</td></tr>
+  </table>
+  <p><a href="{{ url_for('settings', store_id=store_id) }}">Cambiar ajustes</a></p>
+</div>
+{% endblock %}
