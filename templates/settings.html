@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Ajustes · Thing To Sell To Ebay{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Ajustes de eBay</h2>
+  <p>IDs de tus políticas de eBay (las encuentras en <a href="https://www.ebay.com/bp/manage" target="_blank">ebay.com/bp/manage</a>).</p>
+  <form method="post">
+    <div class="form-row">
+      <label>ID de política de pago</label>
+      <input name="payment_policy_id" value="{{ ebay.payment_policy_id }}">
+    </div>
+    <div class="form-row">
+      <label>ID de política de envío</label>
+      <input name="fulfillment_policy_id" value="{{ ebay.fulfillment_policy_id }}">
+    </div>
+    <div class="form-row">
+      <label>ID de política de devolución</label>
+      <input name="return_policy_id" value="{{ ebay.return_policy_id }}">
+    </div>
+    <div class="form-row">
+      <label>Clave de ubicación (merchant location key)</label>
+      <input name="merchant_location_key" value="{{ ebay.merchant_location_key }}">
+    </div>
+    <div class="form-row">
+      <label>ID de categoría eBay</label>
+      <input name="category_id" value="{{ ebay.category_id }}">
+    </div>
+    <button type="submit" class="btn">Guardar</button>
+  </form>
+</div>
+{% endblock %}
