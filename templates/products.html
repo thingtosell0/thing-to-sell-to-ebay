@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Productos · Thing To Sell To Ebay{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Productos de tu tienda</h2>
+  <p>Marca los productos que quieres publicar en eBay y haz clic en Publicar.</p>
+  <form id="pubform" method="post" action="{{ url_for('publish', store_id=store_id) }}">
+  <table>
+    <tr>
+      <th><input type="checkbox" id="selectall"></th>
+      <th></th>
+      <th>Producto</th>
+      <th>SKU</th>
+      <th>Precio</th>
+      <th>Cant.</th>
+      <th>Estado eBay</th>
+    </tr>
+    {% for p in products %}
+    <tr>
+      <td>{% if not p.published %}<input type="checkbox" name="product_ids" value="{{ p.id }}" class="pcheck">{% endif %}</td>
+      <td>{% if p.image %}<img src="{{ p.image }}" class="thumb">{% endif %}</td>
+      <td>{{ p.name }}{% if not p.enabled %} <small>(deshabilitado)</small>{% endif %}</td>
+      <td>{{ p.sku }}</td>
+      <td>${{ "%.2f"|format(p.price) }}</td>
+      <td>{{ p.quantity }}</td>
+      <td>
+        {% if p.published %}
+        <span class="badge pub">Publicado</span>
+        {% if p.listing_id %}<br><small><a href="https://www.ebay.com/itm/{{ p.listing_id }}" target="_blank">{{ p.listing_id }}</a></small>{% endif %}
+        {% else %}
+        <span class="badge unpub">No publicado</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  <p style="margin-top:15px">
+    <button type="submit" class="btn" id="pubbtn">Publicar seleccionados en eBay</button>
+    <span id="result" style="margin-left:15px"></span>
+  </p>
+  </form>
+</div>
+<script>
+document.getElementById('selectall').addEventListener('change', function(e) {
+  document.querySelectorAll('.pcheck').forEach(c => c.checked = e.target.checked);
+});
+document.getElementById('pubform').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var btn = document.getElementById('pubbtn');
+  var res = document.getElementById('result');
+  btn.disabled = true;
+  res.textContent = 'Publicando...';
+  fetch(this.action, { method: 'POST', body: new FormData(this) })
+    .then(r => r.json())
+    .then(function(data) {
+      var ok = 0, fail = 0;
+      (data.results || []).forEach(function(r) { r.ok ? ok++ : fail++; });
+      res.textContent = 'Listo: ' + ok + ' publicados, ' + fail + ' con error.';
+      if (ok > 0) setTimeout(function(){ location.reload(); }, 2000);
+      btn.disabled = false;
+    })
+    .catch(function(err) {
+      res.textContent = 'Error: ' + err;
+      btn.disabled = false;
+    });
+});
+</script>
+{% endblock %}
