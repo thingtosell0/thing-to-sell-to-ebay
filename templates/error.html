@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Error · Thing To Sell To Ebay{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="error">
+    <strong>Error:</strong> {{ message }}
+  </div>
+  <p style="margin-top:15px">Si la tienda no está conectada, reinstala la app desde tu panel de Ecwid.</p>
+</div>
+{% endblock %}
