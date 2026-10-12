@@ -23,14 +23,17 @@ import os
 import secrets
 import subprocess
 import sys
+import time
 import urllib.parse
 import urllib.request
 import urllib.error
 
-sys.path.insert(0, "/opt/hatch/skills/skill-creator/bin")
-from dynamic_credentials import add_surrogate_to_request, read_json_response
-
 from flask import Flask, request, redirect, url_for, render_template, jsonify, session
+
+
+def read_json_response(response):
+    """Read and parse JSON from a urllib response."""
+    return json.loads(response.read().decode("utf-8"))
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET", secrets.token_hex(32))
@@ -124,20 +127,57 @@ def ecwid_products(store_id, limit=100, offset=0, token=None):
 
 
 # ---------------------------------------------------------------------------
-# eBay API helpers (via secure connector surrogates)
+# eBay API helpers (OAuth2 with refresh token from environment)
 # ---------------------------------------------------------------------------
 
 EBAY_API = "https://api.ebay.com"
+EBAY_TOKEN_URL = "https://api.ebay.com/identity/v1/oauth2/token"
+
+# In-memory token cache
+_ebay_token_cache = {"access_token": None, "expires_at": 0}
+
+
+def ebay_get_access_token():
+    """Get a valid eBay access token, refreshing if needed."""
+    now = time.time()
+    if _ebay_token_cache["access_token"] and _ebay_token_cache["expires_at"] > now + 60:
+        return _ebay_token_cache["access_token"]
+
+    client_id = os.environ.get("EBAY_CLIENT_ID", "")
+    client_secret = os.environ.get("EBAY_CLIENT_SECRET", "")
+    refresh_token = os.environ.get("EBAY_REFRESH_TOKEN", "")
+
+    if not all([client_id, client_secret, refresh_token]):
+        raise Exception("eBay credentials not configured (EBAY_CLIENT_ID/EBAY_CLIENT_SECRET/EBAY_REFRESH_TOKEN)")
+
+    import base64
+    creds = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
+    data = urllib.parse.urlencode({
+        "grant_type": "refresh_token",
+        "refresh_token": refresh_token,
+        "scope": "https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.fulfillment",
+    }).encode()
+
+    req = urllib.request.Request(EBAY_TOKEN_URL, data=data, method="POST", headers={
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Authorization": f"Basic {creds}",
+    })
+    resp = read_json_response(urllib.request.urlopen(req, timeout=30))
+    _ebay_token_cache["access_token"] = resp["access_token"]
+    _ebay_token_cache["expires_at"] = now + int(resp.get("expires_in", 7200))
+    return _ebay_token_cache["access_token"]
 
 
 def ebay_api(method, path, data=None):
     url = EBAY_API + path
     body = json.dumps(data).encode() if data is not None else None
-    headers = {"Content-Language": "en-US"}
+    headers = {
+        "Content-Language": "en-US",
+        "Authorization": f"Bearer {ebay_get_access_token()}",
+    }
     if body:
         headers["Content-Type"] = "application/json"
     req = urllib.request.Request(url, data=body, headers=headers, method=method)
-    add_surrogate_to_request(req, "custom.ebay", allowed_hosts=["api.ebay.com"])
     try:
         return read_json_response(urllib.request.urlopen(req, timeout=60))
     except urllib.error.HTTPError as e:
