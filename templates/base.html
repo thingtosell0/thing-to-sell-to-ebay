@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}eBay Integration{% endblock %}</title>
+<style>
+  body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; background: #f5f5f5; color: #333; }
+  .nav { background: #1a1a2e; color: white; padding: 12px 20px; display: flex; gap: 20px; align-items: center; }
+  .nav a { color: #ddd; text-decoration: none; }
+  .nav a:hover { color: white; }
+  .nav .brand { font-weight: bold; color: white; font-size: 18px; }
+  .container { max-width: 1100px; margin: 20px auto; padding: 0 20px; }
+  .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  .btn { background: #0064d2; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+  .btn:hover { background: #0053ad; }
+  .btn:disabled { background: #ccc; cursor: not-allowed; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
+  th { background: #fafafa; font-weight: 600; }
+  .thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; }
+  .badge.pub { background: #d4edda; color: #155724; }
+  .badge.unpub { background: #f8f9fa; color: #6c757d; border: 1px solid #ddd; }
+  .form-row { margin-bottom: 15px; }
+  .form-row label { display: block; font-weight: 600; margin-bottom: 5px; }
+  .form-row input { width: 100%; max-width: 400px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+  .stat { display: inline-block; margin-right: 30px; }
+  .stat .num { font-size: 28px; font-weight: bold; }
+  .stat .lbl { color: #666; font-size: 13px; }
+  .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 6px; }
+</style>
+</head>
+<body>
+<div class="nav">
+  <span class="brand">Thing To Sell To Ebay</span>
+  <a href="{{ url_for('dashboard', store_id=store_id) }}">Panel</a>
+  <a href="{{ url_for('products', store_id=store_id) }}">Productos</a>
+  <a href="{{ url_for('settings', store_id=store_id) }}">Ajustes</a>
+</div>
+<div class="container">
+{% block content %}{% endblock %}
+</div>
+</body>
+</html>
