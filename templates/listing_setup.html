@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Configurar Listing · Thing To Sell To Ebay{% endblock %}
+{% block title %}{{ 'Listing Setup' if lang == 'en' else 'Configurar Listing' }} · Thing To Sell To Ebay{% endblock %}
 {% block content %}
 <style>
 .m2e-card { background:#fff; border-radius:12px; padding:24px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
@@ -16,8 +16,8 @@
 </style>
 
 <div class="m2e-card">
-  <h2 style="margin:0 0 4px;">New eBay listing</h2>
-  <p style="color:#666;">Configura las plantillas y políticas para estos {{ products|length }} productos.</p>
+  <h2 style="margin:0 0 4px;">{{ 'New eBay listing' if lang == 'en' else 'Nueva publicación eBay' }}</h2>
+  <p style="color:#666;">{{ 'Configure templates and policies for these' if lang == 'en' else 'Configura las plantillas y políticas para estos' }} {{ products|length }} {{ 'products.' if lang == 'en' else 'productos.' }}</p>
 </div>
 
 <div class="m2e-card">
@@ -69,8 +69,8 @@
 </div>
 
 <div class="m2e-card">
-  <h2 style="margin:0 0 4px;">Productos ({{ products|length }})</h2>
-  <p style="color:#666;">Revisa y ajusta cada producto antes de publicar.</p>
+  <h2 style="margin:0 0 4px;">{{ 'Products' if lang == 'en' else 'Productos' }} ({{ products|length }})</h2>
+  <p style="color:#666;">{{ 'Review and adjust each product before publishing.' if lang == 'en' else 'Revisa y ajusta cada producto antes de publicar.' }}</p>
 </div>
 
 <form id="publishform">
@@ -80,54 +80,54 @@
     <div>{% if p.image %}<img src="{{ p.image }}">{% endif %}</div>
     <div>
       <div class="field">
-        <label>Título del listing</label>
+        <label>{{ 'Listing title' if lang == 'en' else 'Título del listing' }}</label>
         <input type="text" name="title_{{ p.id }}" value="{{ p.name }}" maxlength="80">
       </div>
       <div class="field-row">
         <div class="field">
-          <label>Precio USD</label>
+          <label>{{ 'Price USD' if lang == 'en' else 'Precio USD' }}</label>
           <input type="number" name="price_{{ p.id }}" value="{{ '%.2f'|format(p.price) }}" step="0.01" min="0.99">
         </div>
         <div class="field">
-          <label>Cantidad</label>
+          <label>{{ 'Quantity' if lang == 'en' else 'Cantidad' }}</label>
           <input type="number" name="qty_{{ p.id }}" value="{{ p.quantity if p.quantity > 0 else 1 }}" min="1">
         </div>
         <div class="field">
-          <label>Condición</label>
+          <label>{{ 'Condition' if lang == 'en' else 'Condición' }}</label>
           <select name="condition_{{ p.id }}">
-            <option value="NEW" {% if p.saved_condition == 'NEW' %}selected{% endif %}>Nuevo</option>
-            <option value="USED_EXCELLENT" {% if p.saved_condition == 'USED_EXCELLENT' %}selected{% endif %}>Usado - Excelente</option>
-            <option value="USED_VERY_GOOD" {% if p.saved_condition == 'USED_VERY_GOOD' %}selected{% endif %}>Usado - Muy bueno</option>
-            <option value="USED_GOOD" {% if p.saved_condition == 'USED_GOOD' %}selected{% endif %}>Usado - Bueno</option>
-            <option value="FOR_PARTS" {% if p.saved_condition == 'FOR_PARTS' %}selected{% endif %}>Para partes</option>
+            <option value="NEW" {% if p.saved_condition == 'NEW' %}selected{% endif %}>{{ 'New' if lang == 'en' else 'Nuevo' }}</option>
+            <option value="USED_EXCELLENT" {% if p.saved_condition == 'USED_EXCELLENT' %}selected{% endif %}>{{ 'Used - Excellent' if lang == 'en' else 'Usado - Excelente' }}</option>
+            <option value="USED_VERY_GOOD" {% if p.saved_condition == 'USED_VERY_GOOD' %}selected{% endif %}>{{ 'Used - Very Good' if lang == 'en' else 'Usado - Muy bueno' }}</option>
+            <option value="USED_GOOD" {% if p.saved_condition == 'USED_GOOD' %}selected{% endif %}>{{ 'Used - Good' if lang == 'en' else 'Usado - Bueno' }}</option>
+            <option value="FOR_PARTS" {% if p.saved_condition == 'FOR_PARTS' %}selected{% endif %}>{{ 'For parts' if lang == 'en' else 'Para partes' }}</option>
           </select>
         </div>
       </div>
       <div class="field">
-        <label>Categoría eBay</label>
+        <label>{{ 'eBay Category' if lang == 'en' else 'Categoría eBay' }}</label>
         <select name="category_{{ p.id }}">
-          <option value="{{ ebay_config.category_id }}" selected>{{ ebay_config.category_id }} (por defecto)</option>
+          <option value="{{ ebay_config.category_id }}" selected>{{ ebay_config.category_id }} {{ '(default)' if lang == 'en' else '(por defecto)' }}</option>
         </select>
-        <small style="color:#888;">Sugerencia automática de categoría próximamente.</small>
+        <small style="color:#888;">{{ 'Automatic category suggestion coming soon.' if lang == 'en' else 'Sugerencia automática de categoría próximamente.' }}</small>
       </div>
       <div class="field-row">
         <div class="field">
-          <label>Envío / Shipping</label>
+          <label>{{ 'Shipping' if lang == 'en' else 'Envío' }}</label>
           <select name="shipping_{{ p.id }}">
             <option value="{{ ebay_config.fulfillment_policy_id }}" selected>{{ (ebay_config.fulfillment_policy_name or ebay_config.fulfillment_policy_id)[:40] }}</option>
           </select>
         </div>
         <div class="field">
-          <label>Devolución / Return</label>
+          <label>{{ 'Return' if lang == 'en' else 'Devolución' }}</label>
           <select name="return_{{ p.id }}">
             <option value="{{ ebay_config.return_policy_id }}" {% if p.saved_return != ebay_config.return_policy_30day_id %}selected{% endif %}>{{ (ebay_config.return_policy_name or ebay_config.return_policy_id)[:40] }}</option>
             {% if ebay_config.return_policy_30day_id %}
-            <option value="{{ ebay_config.return_policy_30day_id }}" {% if p.saved_return == ebay_config.return_policy_30day_id %}selected{% endif %}>{{ (ebay_config.return_policy_30day_name or '30 días')[:40] }} ({{ ebay_config.return_policy_30day_id }})</option>
+            <option value="{{ ebay_config.return_policy_30day_id }}" {% if p.saved_return == ebay_config.return_policy_30day_id %}selected{% endif %}>{{ (ebay_config.return_policy_30day_name or '30 days')[:40] }} ({{ ebay_config.return_policy_30day_id }})</option>
             {% endif %}
           </select>
         </div>
         <div class="field">
-          <label>Pago / Payment</label>
+          <label>{{ 'Payment' if lang == 'en' else 'Pago' }}</label>
           <select name="payment_{{ p.id }}">
             <option value="{{ ebay_config.payment_policy_id }}" selected>{{ (ebay_config.payment_policy_name or ebay_config.payment_policy_id)[:40] }}</option>
           </select>
@@ -140,9 +140,9 @@
 {% endfor %}
 
 <div class="m2e-card">
-  <h3>Políticas eBay</h3>
-  <p style="color:#666;font-size:14px;">Pago: {{ ebay_config.payment_policy_id }} · Envío: {{ ebay_config.fulfillment_policy_id }} · Devolución: {{ ebay_config.return_policy_id }} · <a href="{{ url_for('settings', store_id=store_id) }}">Cambiar</a></p>
-  <button type="submit" class="btn-blue" id="pubbtn">🚀 Publicar {{ products|length }} en eBay</button>
+  <h3>{{ 'eBay Policies' if lang == 'en' else 'Políticas eBay' }}</h3>
+  <p style="color:#666;font-size:14px;">{{ 'Payment' if lang == 'en' else 'Pago' }}: {{ ebay_config.payment_policy_id }} · {{ 'Shipping' if lang == 'en' else 'Envío' }}: {{ ebay_config.fulfillment_policy_id }} · {{ 'Return' if lang == 'en' else 'Devolución' }}: {{ ebay_config.return_policy_id }} · <a href="{{ url_for('settings', store_id=store_id) }}">{{ 'Change' if lang == 'en' else 'Cambiar' }}</a></p>
+  <button type="submit" class="btn-blue" id="pubbtn">🚀 {{ 'Publish' if lang == 'en' else 'Publicar' }} {{ products|length }} {{ 'on eBay' if lang == 'en' else 'en eBay' }}</button>
   <div id="result"></div>
 </div>
 </form>
@@ -153,7 +153,7 @@ document.getElementById('publishform').addEventListener('submit', function(e) {
   var btn = document.getElementById('pubbtn');
   var res = document.getElementById('result');
   btn.disabled = true;
-  res.innerHTML = 'Publicando...';
+  res.innerHTML = '{{ "Publishing..." if lang == "en" else "Publicando..." }}';
   fetch('{{ url_for("publish_configured", store_id=store_id) }}', { method: 'POST', body: new FormData(this) })
     .then(r => r.json())
     .then(function(data) {
