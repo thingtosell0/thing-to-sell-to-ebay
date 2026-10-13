@@ -1,39 +1,107 @@
 {% extends "base.html" %}
-{% block title %}Panel · eBay Integration{% endblock %}
+{% block title %}Panel · Thing To Sell To Ebay{% endblock %}
 {% block content %}
-<div class="card">
-  <h2>Panel de sincronización</h2>
-  <div class="stat"><div class="num">{{ published_count }}</div><div class="lbl">Publicados en eBay</div></div>
-  <div class="stat"><div class="num">{{ ebay_config.merchant_location_key or '—' }}</div><div class="lbl">Ubicación</div></div>
+<style>
+.m2e-card { background: #fff; border-radius: 12px; padding: 28px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.m2e-card h2 { font-size: 26px; margin: 0 0 6px; }
+.m2e-card .sub { color: #666; font-size: 14px; margin-bottom: 16px; }
+.setup-row { display: flex; align-items: center; padding: 12px 0; border-top: 1px solid #eee; font-size: 16px; }
+.setup-row .icon { width: 28px; font-size: 20px; }
+.setup-row.done .icon { color: #2e7d32; }
+.setup-row.pending .icon { color: #e6a800; }
+.badge-done { background: #f0f0f0; border: 1px solid #ddd; border-radius: 8px; padding: 4px 12px; font-size: 13px; color: #555; }
+.list-new-box { background: #f4f4f5; border-radius: 8px; padding: 20px; margin-top: 8px; display: flex; gap: 24px; }
+.list-new-left { flex: 1; }
+.list-new-right { flex: 1; }
+.progress-wrap { height: 6px; background: #e8e8e8; border-radius: 3px; overflow: hidden; display: flex; margin: 12px 0 16px; }
+.progress-listed { background: #2e7d32; height: 100%; }
+.progress-not { background: #d99a00; height: 100%; }
+.stat-line { display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #eee; font-size: 15px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 6px; }
+.dot.green { background: #2e7d32; } .dot.orange { background: #d99a00; }
+.btn-blue { background: #1a56db; color: #fff; border: none; border-radius: 8px; padding: 12px 22px; font-size: 15px; font-weight: 600; cursor: pointer; }
+.btn-white { background: #fff; color: #222; border: 1px solid #ddd; border-radius: 8px; padding: 12px 22px; font-size: 15px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
+.pill { display: inline-block; border: 1px solid #ccc; border-radius: 8px; padding: 5px 14px; font-size: 14px; color: #555; margin-right: 8px; }
+.collapse-head { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+.sales-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 16px; }
+.sales-box { border: 1px solid #e5e5e5; border-radius: 12px; padding: 18px; }
+.sales-box .lbl { font-size: 14px; color: #333; }
+.sales-box .val { font-size: 20px; font-weight: 700; margin-top: 6px; }
+.sales-box .chg { color: #2e7d32; font-size: 14px; float: right; }
+</style>
+
+<div class="m2e-card">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <h2>Setup Guide</h2>
+    <span style="color:#999;font-size:20px;">&#8964;</span>
+  </div>
+  <p class="sub">By default, the app does not synchronize your inventory to give you full control of your multichannel setup.</p>
+  <span class="badge-done">{{ steps_completed }} / 4 completed</span>
+
+  <div class="setup-row {{ 'done' if has_linked else 'pending' }}">
+    <span class="icon">{{ '🙂' if has_linked else '😐' }}</span> Link Products
+  </div>
+  <div class="setup-row {{ 'done' if has_sync else 'pending' }}">
+    <span class="icon">{{ '🙂' if has_sync else '😐' }}</span> Synchronize Inventory
+  </div>
+  <div class="setup-row {{ 'done' if has_orders else 'pending' }}">
+    <span class="icon">{{ '🙂' if has_orders else '😐' }}</span> Manage Orders
+  </div>
+  <div class="setup-row {{ 'done' if list_new_done else 'pending' }}">
+    <span class="icon">{{ '🙂' if list_new_done else '😟' }}</span> List New Items
+  </div>
+
+  <div class="list-new-box">
+    <div class="list-new-left">
+      <p style="margin:0 0 16px;color:#444;font-size:15px;">Expand your selling horizons and list more products from your Ecwid store to eBay using the button below.</p>
+      <a href="{{ url_for('products', store_id=store_id) }}" class="btn-white">List on eBay</a>
+    </div>
+    <div class="list-new-right">
+      <div style="display:flex;justify-content:space-between;font-size:15px;">
+        <span>Products on Ecwid</span><strong>{{ '{:,}'.format(total_products) }}</strong>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-listed" style="width:{{ listed_pct }}%"></div>
+        <div class="progress-not" style="width:{{ not_listed_pct }}%"></div>
+      </div>
+      <div class="stat-line"><span>Listed <span class="dot green"></span></span><span><strong>{{ listed_pct }}%</strong> ({{ '{:,}'.format(listed_count) }}) 👁</span></div>
+      <div class="stat-line"><span>Not Listed <span class="dot orange"></span></span><span><strong>{{ not_listed_pct }}%</strong> ({{ '{:,}'.format(not_listed_count) }}) 👁</span></div>
+    </div>
+  </div>
 </div>
 
-<div class="card">
-  <h3>Productos publicados</h3>
+<div class="m2e-card">
+  <div class="collapse-head"><h2>Listings and Orders Errors</h2><span style="color:#999;font-size:20px;">&#8964;</span></div>
+  <p class="sub">A detailed overview of errors affecting your ebay listings and orders.</p>
+  <span class="pill">{{ listing_errors|length }} listings errors</span>
+  <span class="pill">{{ order_errors|length }} order errors</span>
+  {% if listing_errors %}
+  <ul style="margin-top:12px;color:#b00;">
+    {% for e in listing_errors[:10] %}<li>{{ e }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+</div>
+
+<div class="m2e-card">
+  <div class="collapse-head"><h2>Orders Shipment</h2><span style="color:#999;font-size:20px;">&#8964;</span></div>
+  <p class="sub">Manage and prioritize your order shipments efficiently.</p>
+  <span class="pill">{{ sync_state.get('processed_orders', [])|length }} orders</span>
+</div>
+
+<div class="m2e-card">
+  <div class="collapse-head"><h2>Published Products</h2></div>
   {% if published %}
-  <table>
-    <tr><th>Producto Ecwid</th><th>SKU eBay</th><th>Listing ID</th></tr>
+  <table style="width:100%;border-collapse:collapse;margin-top:12px;">
+    <tr style="border-bottom:1px solid #eee;text-align:left;"><th>Producto Ecwid</th><th>SKU eBay</th><th>Listing ID</th></tr>
     {% for pid, info in published.items() %}
-    <tr>
-      <td>{{ pid }}</td>
-      <td>{{ info.ebay_sku }}</td>
+    <tr style="border-bottom:1px solid #f5f5f5;">
+      <td>{{ pid }}</td><td>{{ info.ebay_sku }}</td>
       <td><a href="https://www.ebay.com/itm/{{ info.listing_id }}" target="_blank">{{ info.listing_id }}</a></td>
     </tr>
     {% endfor %}
   </table>
   {% else %}
-  <p>Todavía no hay productos publicados. Ve a <a href="{{ url_for('products', store_id=store_id) }}">Productos</a> para elegir cuáles publicar.</p>
+  <p class="sub">Todavía no hay productos publicados. Ve a <a href="{{ url_for('products', store_id=store_id) }}">Productos</a> para elegir cuáles publicar.</p>
   {% endif %}
-</div>
-
-<div class="card">
-  <h3>Configuración eBay actual</h3>
-  <table>
-    <tr><th>Política</th><th>ID</th></tr>
-    <tr><td>Pago</td><td>{{ ebay_config.payment_policy_id }}</td></tr>
-    <tr><td>Envío</td><td>{{ ebay_config.fulfillment_policy_id }}</td></tr>
-    <tr><td>Devolución</td><td>{{ ebay_config.return_policy_id }}</td></tr>
-    <tr><td>Categoría</td><td>{{ ebay_config.category_id }}</td></tr>
-  </table>
-  <p><a href="{{ url_for('settings', store_id=store_id) }}">Cambiar ajustes</a></p>
 </div>
 {% endblock %}
