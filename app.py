@@ -573,6 +573,7 @@ def settings():
         for key in ["payment_policy_id", "payment_policy_name",
                     "fulfillment_policy_id", "fulfillment_policy_name",
                     "return_policy_id", "return_policy_name",
+                    "return_policy_30day_id", "return_policy_30day_name",
                     "merchant_location_key", "category_id"]:
             val = request.form.get(key)
             if val is not None:

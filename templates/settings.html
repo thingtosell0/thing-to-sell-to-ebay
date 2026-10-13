@@ -1,38 +1,39 @@
 {% extends "base.html" %}
-{% block title %}Settings / Ajustes · Thing To Sell To Ebay{% endblock %}
+{% block title %}{{ 'Settings' if lang == 'en' else 'Ajustes' }} · Thing To Sell To Ebay{% endblock %}
 {% block content %}
 <div class="card">
-  <h2>eBay Settings / Ajustes de eBay</h2>
-  <p>Your eBay policy IDs — find them at <a href="https://www.ebay.com/bp/manage" target="_blank">ebay.com/bp/manage</a>.<br>
-  Los IDs de tus políticas de eBay — los encuentras en <a href="https://www.ebay.com/bp/manage" target="_blank">ebay.com/bp/manage</a>.</p>
+  <h2>{{ 'eBay Settings' if lang == 'en' else 'Ajustes de eBay' }}</h2>
+  <p>{{ 'Your eBay policy IDs — find them at' if lang == 'en' else 'Los IDs de tus políticas de eBay — los encuentras en' }} <a href="https://www.ebay.com/bp/manage" target="_blank">ebay.com/bp/manage</a>.</p>
   <form method="post">
     <div class="form-row">
-      <label>Payment policy / Política de pago</label>
+      <label>{{ 'Payment policy' if lang == 'en' else 'Política de pago' }}</label>
       <input name="payment_policy_id" value="{{ ebay.payment_policy_id }}" placeholder="ID">
-      <input name="payment_policy_name" value="{{ ebay.payment_policy_name or '' }}" placeholder="Name / Nombre" style="margin-top:6px;">
-      {% if ebay.payment_policy_id %}<small style="color:#666;">{{ ebay.payment_policy_name or '' }} ({{ ebay.payment_policy_id }})</small>{% endif %}
+      <input name="payment_policy_name" value="{{ ebay.payment_policy_name or '' }}" placeholder="{{ 'Name' if lang == 'en' else 'Nombre' }}" style="margin-top:6px;">
     </div>
     <div class="form-row">
-      <label>Shipping policy / Política de envío</label>
+      <label>{{ 'Shipping policy' if lang == 'en' else 'Política de envío' }}</label>
       <input name="fulfillment_policy_id" value="{{ ebay.fulfillment_policy_id }}" placeholder="ID">
-      <input name="fulfillment_policy_name" value="{{ ebay.fulfillment_policy_name or '' }}" placeholder="Name / Nombre" style="margin-top:6px;">
-      {% if ebay.fulfillment_policy_id %}<small style="color:#666;">{{ ebay.fulfillment_policy_name or '' }} ({{ ebay.fulfillment_policy_id }})</small>{% endif %}
+      <input name="fulfillment_policy_name" value="{{ ebay.fulfillment_policy_name or '' }}" placeholder="{{ 'Name' if lang == 'en' else 'Nombre' }}" style="margin-top:6px;">
     </div>
     <div class="form-row">
-      <label>Return policy / Política de devolución</label>
+      <label>{{ 'Return policy' if lang == 'en' else 'Política de devolución' }}</label>
       <input name="return_policy_id" value="{{ ebay.return_policy_id }}" placeholder="ID">
-      <input name="return_policy_name" value="{{ ebay.return_policy_name or '' }}" placeholder="Name / Nombre" style="margin-top:6px;">
-      {% if ebay.return_policy_id %}<small style="color:#666;">{{ ebay.return_policy_name or '' }} ({{ ebay.return_policy_id }})</small>{% endif %}
+      <input name="return_policy_name" value="{{ ebay.return_policy_name or '' }}" placeholder="{{ 'Name' if lang == 'en' else 'Nombre' }}" style="margin-top:6px;">
     </div>
     <div class="form-row">
-      <label>Location key / Clave de ubicación</label>
+      <label>{{ '30-day return policy (auto parts)' if lang == 'en' else 'Política de devolución 30 días (auto partes)' }}</label>
+      <input name="return_policy_30day_id" value="{{ ebay.return_policy_30day_id or '' }}" placeholder="ID">
+      <input name="return_policy_30day_name" value="{{ ebay.return_policy_30day_name or '' }}" placeholder="{{ 'Name' if lang == 'en' else 'Nombre' }}" style="margin-top:6px;">
+    </div>
+    <div class="form-row">
+      <label>{{ 'Location key' if lang == 'en' else 'Clave de ubicación' }}</label>
       <input name="merchant_location_key" value="{{ ebay.merchant_location_key }}">
     </div>
     <div class="form-row">
-      <label>eBay category ID / ID de categoría</label>
+      <label>{{ 'eBay category ID' if lang == 'en' else 'ID de categoría eBay' }}</label>
       <input name="category_id" value="{{ ebay.category_id }}">
     </div>
-    <button type="submit" class="btn">Save / Guardar</button>
+    <button type="submit" class="btn">{{ 'Save' if lang == 'en' else 'Guardar' }}</button>
   </form>
 </div>
 {% endblock %}
