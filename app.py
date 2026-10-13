@@ -51,10 +51,22 @@ DEFAULT_STORE_ID = "120529764"
 # eBay defaults for car stereos (configurable in Settings)
 DEFAULT_EBAY_CONFIG = {
     "payment_policy_id": "274761426019",
+    "payment_policy_name": "Thing To Sell LLC Payment Policy",
     "fulfillment_policy_id": "279114158019",
+    "fulfillment_policy_name": "Thing To Sell LLC Shipping Policy - Free Shipping Included",
     "return_policy_id": "275479123019",
+    "return_policy_name": "Thing To Sell LLC Return Policy",
+    "return_policy_30day_id": "275104384019",
+    "return_policy_30day_name": "30-Day Return Policy",
     "merchant_location_key": "dallas-tx",
     "category_id": "94845",
+}
+
+DEFAULT_TEMPLATES = {
+    "selling": [{"name": "Default", "id": "default"}],
+    "synchronization": [{"name": "Default", "id": "default"}],
+    "description": [{"name": "Brand New Open Box.", "id": "openbox",
+                     "text": "Brand New Open Box"}],
 }
 
 # Simple file-based store for app settings (per Ecwid store)
@@ -71,6 +83,7 @@ def load_store_config(store_id):
     path = _store_file(store_id)
     config = {
         "ebay": dict(DEFAULT_EBAY_CONFIG),
+        "templates": {k: list(v) for k, v in DEFAULT_TEMPLATES.items()},
         "published": {},  # ecwid_product_id -> {ebay_sku, offer_id, listing_id}
         "ecwid_token": None,
     }
@@ -187,20 +200,25 @@ def ebay_api(method, path, data=None):
         raise Exception(f"eBay API {e.code}: {e.read().decode()[:500]}")
 
 
-def ebay_publish_product(ecwid_product, ebay_cfg):
+def ebay_publish_product(ecwid_product, ebay_cfg, overrides=None):
     """Create eBay inventory item + offer + publish. Returns listing info.
 
     ecwid_product: dict with id, name, price, quantity, description, etc.
+    overrides: optional dict with title, price, quantity, condition, category_id
     """
+    ov = overrides or {}
     ecwid_id = str(ecwid_product["id"])
     sku = f"ECWID-{ecwid_id}"
-    price = float(ecwid_product.get("price", 0))
-    qty = int(ecwid_product.get("quantity", 0) or 0)
+    price = float(ov.get("price", ecwid_product.get("price", 0)))
+    qty = int(ov.get("quantity", ecwid_product.get("quantity", 0)) or 0)
+    title = ov.get("title", ecwid_product.get("name", ""))[:80]
+    condition = ov.get("condition", "NEW")
+    category_id = ov.get("category_id", ebay_cfg.get("category_id", "94845"))
 
     # 1. Create/update inventory item
     item = {
         "product": {
-            "title": ecwid_product.get("name", "")[:80],
+            "title": title,
             "description": ecwid_product.get("description", ""),
             "aspects": {
                 "Brand": ["Unbranded"],
@@ -209,7 +227,7 @@ def ebay_publish_product(ecwid_product, ebay_cfg):
             "upc": ["Does Not Apply"],
             "imageUrls": [],
         },
-        "condition": "NEW",
+        "condition": condition,
         "packageWeightAndSize": {
             "weight": {"value": 4, "unit": "POUND"},
             "dimensions": {"height": 4, "length": 4, "width": 4, "unit": "INCH"},
@@ -231,14 +249,14 @@ def ebay_publish_product(ecwid_product, ebay_cfg):
         "marketplaceId": "EBAY_US",
         "format": "FIXED_PRICE",
         "availableQuantity": qty,
-        "categoryId": ebay_cfg.get("category_id", "94845"),
+        "categoryId": category_id,
         "listingDuration": "GTC",
         "listingDescription": ecwid_product.get("description", "")[:8000],
         "pricingSummary": {"price": {"value": str(price), "currency": "USD"}},
         "listingPolicies": {
-            "fulfillmentPolicyId": ebay_cfg["fulfillment_policy_id"],
-            "paymentPolicyId": ebay_cfg["payment_policy_id"],
-            "returnPolicyId": ebay_cfg["return_policy_id"],
+            "fulfillmentPolicyId": ov.get("fulfillment_policy_id", ebay_cfg["fulfillment_policy_id"]),
+            "paymentPolicyId": ov.get("payment_policy_id", ebay_cfg["payment_policy_id"]),
+            "returnPolicyId": ov.get("return_policy_id", ebay_cfg["return_policy_id"]),
         },
         "merchantLocationKey": ebay_cfg.get("merchant_location_key", "dallas-tx"),
         "tax": {"applyTax": False},
@@ -327,13 +345,55 @@ def dashboard():
         except (ValueError, OSError):
             pass
 
+    # Total products from Ecwid
+    total_products = 0
+    try:
+        data = ecwid_api(store_id, "GET", "/products?limit=1&offset=0")
+        total_products = data.get("total", 0)
+    except Exception:
+        pass
+
+    listed_count = len(published)
+    not_listed_count = max(0, total_products - listed_count)
+    listed_pct = round(listed_count / total_products * 100, 2) if total_products else 0
+    not_listed_pct = round(100 - listed_pct, 2) if total_products else 0
+
+    # Setup guide steps
+    has_linked = listed_count > 0
+    has_sync = bool(sync_state.get("last_run") or sync_state.get("ecwid_quantities"))
+    has_orders = bool(sync_state.get("processed_orders"))
+    steps_completed = sum([has_linked, has_sync, has_orders])
+    # List New Items is complete only if everything is listed
+    list_new_done = total_products > 0 and not_listed_count == 0
+    if list_new_done:
+        steps_completed += 1
+
+    # Errors
+    listing_errors = sync_state.get("listing_errors", [])
+    order_errors = sync_state.get("order_errors", [])
+    last_errors = sync_state.get("last_errors")
+    if last_errors and isinstance(last_errors, list):
+        listing_errors = listing_errors + last_errors
+
     return render_template(
         "dashboard.html",
         store_id=store_id,
         published=published,
-        published_count=len(published),
+        published_count=listed_count,
         sync_state=sync_state,
         ebay_config=config.get("ebay", {}),
+        total_products=total_products,
+        listed_count=listed_count,
+        not_listed_count=not_listed_count,
+        listed_pct=listed_pct,
+        not_listed_pct=not_listed_pct,
+        has_linked=has_linked,
+        has_sync=has_sync,
+        has_orders=has_orders,
+        list_new_done=list_new_done,
+        steps_completed=steps_completed,
+        listing_errors=listing_errors,
+        order_errors=order_errors,
     )
 
 
@@ -351,6 +411,12 @@ def products():
     items = []
     for p in data.get("items", []):
         pid = str(p.get("id"))
+        # Category names
+        cats = []
+        for c in p.get("categories", []) or []:
+            cn = c.get("name") if isinstance(c, dict) else None
+            if cn:
+                cats.append(cn)
         items.append({
             "id": pid,
             "name": p.get("name", ""),
@@ -359,6 +425,7 @@ def products():
             "quantity": p.get("quantity", 0),
             "enabled": p.get("enabled", False),
             "image": p.get("thumbnailUrl", ""),
+            "categories": ", ".join(cats),
             "published": pid in published,
             "listing_id": published.get(pid, {}).get("listing_id"),
         })
@@ -369,6 +436,93 @@ def products():
         products=items,
         total=data.get("total", len(items)),
     )
+
+
+@app.route("/listing_setup")
+def listing_setup():
+    """M2E-style: configure selected products before publishing."""
+    store_id = _current_store()
+    config = load_store_config(store_id)
+    ebay_cfg = config.get("ebay", {})
+
+    product_ids = request.args.getlist("product_ids")
+    if not product_ids:
+        return redirect(url_for("products", store_id=store_id))
+
+    items = []
+    saved_policies = config.get("product_policies", {})
+    for pid in product_ids:
+        try:
+            p = ecwid_api(store_id, "GET", f"/products/{pid}")
+            sp = saved_policies.get(pid, {})
+            items.append({
+                "id": str(p.get("id")),
+                "name": p.get("name", ""),
+                "price": p.get("price", 0),
+                "quantity": p.get("quantity", 0),
+                "image": p.get("thumbnailUrl", ""),
+                "saved_shipping": sp.get("fulfillment_policy_id", ""),
+                "saved_return": sp.get("return_policy_id", ""),
+                "saved_payment": sp.get("payment_policy_id", ""),
+                "saved_category": sp.get("category_id", ""),
+                "saved_condition": sp.get("condition", "NEW"),
+            })
+        except Exception:
+            continue
+
+    return render_template(
+        "listing_setup.html",
+        store_id=store_id,
+        products=items,
+        ebay_config=ebay_cfg,
+        templates=config.get("templates", {}),
+    )
+
+
+@app.route("/publish_configured", methods=["POST"])
+def publish_configured():
+    """Publish products with per-product overrides from listing setup."""
+    store_id = _current_store()
+    config = load_store_config(store_id)
+    ebay_cfg = config.get("ebay", {})
+
+    product_ids = request.form.getlist("product_ids")
+    if not product_ids:
+        return jsonify({"error": "No seleccionaste productos."}), 400
+
+    results = []
+    for pid in product_ids:
+        try:
+            product = ecwid_api(store_id, "GET", f"/products/{pid}")
+            overrides = {
+                "title": request.form.get(f"title_{pid}", product.get("name", "")),
+                "price": request.form.get(f"price_{pid}", product.get("price", 0)),
+                "quantity": request.form.get(f"qty_{pid}", product.get("quantity", 0)),
+                "condition": request.form.get(f"condition_{pid}", "NEW"),
+                "category_id": request.form.get(f"category_{pid}", ebay_cfg.get("category_id", "94845")),
+                "fulfillment_policy_id": request.form.get(f"shipping_{pid}", ebay_cfg.get("fulfillment_policy_id")),
+                "return_policy_id": request.form.get(f"return_{pid}", ebay_cfg.get("return_policy_id")),
+                "payment_policy_id": request.form.get(f"payment_{pid}", ebay_cfg.get("payment_policy_id")),
+            }
+            info = ebay_publish_product(product, ebay_cfg, overrides)
+            config["published"][pid] = info
+            # Save per-product policy preferences
+            if "product_policies" not in config:
+                config["product_policies"] = {}
+            config["product_policies"][pid] = {
+                "fulfillment_policy_id": overrides.get("fulfillment_policy_id"),
+                "return_policy_id": overrides.get("return_policy_id"),
+                "payment_policy_id": overrides.get("payment_policy_id"),
+                "category_id": overrides.get("category_id"),
+                "condition": overrides.get("condition"),
+            }
+            results.append({"id": pid, "name": product.get("name", pid)[:50],
+                            "ok": True, "listing_id": info["listing_id"]})
+        except Exception as e:
+            results.append({"id": pid, "name": pid, "ok": False, "error": str(e)[:200]})
+
+    save_store_config(store_id, config)
+    return jsonify({"results": results})
 
 
 @app.route("/publish", methods=["POST"])
@@ -402,10 +556,12 @@ def settings():
 
     if request.method == "POST":
         ebay_cfg = config.get("ebay", {})
-        for key in ["payment_policy_id", "fulfillment_policy_id",
-                    "return_policy_id", "merchant_location_key", "category_id"]:
+        for key in ["payment_policy_id", "payment_policy_name",
+                    "fulfillment_policy_id", "fulfillment_policy_name",
+                    "return_policy_id", "return_policy_name",
+                    "merchant_location_key", "category_id"]:
             val = request.form.get(key)
-            if val:
+            if val is not None:
                 ebay_cfg[key] = val.strip()
         config["ebay"] = ebay_cfg
         save_store_config(store_id, config)

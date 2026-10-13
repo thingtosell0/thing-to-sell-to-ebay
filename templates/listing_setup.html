@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Configurar Listing · Thing To Sell To Ebay{% endblock %}
+{% block content %}
+<style>
+.m2e-card { background:#fff; border-radius:12px; padding:24px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+.cfg-grid { display:grid; grid-template-columns: 80px 1fr; gap:16px; padding:16px 0; border-bottom:1px solid #f0f0f0; align-items:start; }
+.cfg-grid img { width:80px; height:80px; object-fit:cover; border-radius:8px; }
+.field { margin-bottom:10px; }
+.field label { display:block; font-size:13px; color:#666; margin-bottom:4px; font-weight:600; }
+.field input, .field select { width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:14px; box-sizing:border-box; }
+.field-row { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; }
+.btn-blue { background:#1a56db; color:#fff; border:none; border-radius:8px; padding:14px 32px; font-size:16px; font-weight:600; cursor:pointer; }
+.btn-blue:disabled { background:#ccc; }
+#result { margin-top:16px; }
+.result-ok { color:#1a7f37; } .result-err { color:#b00; }
+</style>
+
+<div class="m2e-card">
+  <h2 style="margin:0 0 4px;">New eBay listing</h2>
+  <p style="color:#666;">Configura las plantillas y políticas para estos {{ products|length }} productos.</p>
+</div>
+
+<div class="m2e-card">
+  <div class="field" style="margin-bottom:16px;">
+    <label style="color:#1a56db;font-weight:700;">Marketplace</label>
+    <select name="marketplace" form="publishform">
+      <option value="EBAY_US" selected>🇺🇸 United States</option>
+    </select>
+  </div>
+</div>
+
+<div class="m2e-card">
+  <div class="field" style="margin-bottom:16px;">
+    <label style="color:#1a56db;font-weight:700;">Selling <span style="color:red">*</span></label>
+    <select name="selling_template" form="publishform">
+      {% for t in templates.get('selling', []) %}
+      <option value="{{ t.id }}" {% if loop.first %}selected{% endif %}>{{ t.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field" style="margin-bottom:16px;">
+    <label style="color:#1a56db;font-weight:700;">Synchronization <span style="color:red">*</span></label>
+    <select name="sync_template" form="publishform">
+      {% for t in templates.get('synchronization', []) %}
+      <option value="{{ t.id }}" {% if loop.first %}selected{% endif %}>{{ t.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field" style="margin-bottom:16px;">
+    <label style="color:#1a56db;font-weight:700;">Description <span style="color:red">*</span></label>
+    <select name="description_template" form="publishform" id="desctmpl">
+      {% for t in templates.get('description', []) %}
+      <option value="{{ t.id }}" {% if loop.first %}selected{% endif %}>{{ t.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field" style="margin-bottom:16px;">
+    <label style="color:#1a56db;font-weight:700;">Shipping <span style="color:red">*</span></label>
+    <select name="shipping_policy" form="publishform">
+      <option value="{{ ebay_config.fulfillment_policy_id }}" selected>{{ ebay_config.fulfillment_policy_name or ebay_config.fulfillment_policy_id }}</option>
+    </select>
+  </div>
+  <div class="field">
+    <label style="color:#1a56db;font-weight:700;">Return <span style="color:red">*</span></label>
+    <select name="return_policy" form="publishform">
+      <option value="{{ ebay_config.return_policy_id }}" selected>{{ ebay_config.return_policy_name or ebay_config.return_policy_id }}</option>
+    </select>
+  </div>
+</div>
+
+<div class="m2e-card">
+  <h2 style="margin:0 0 4px;">Productos ({{ products|length }})</h2>
+  <p style="color:#666;">Revisa y ajusta cada producto antes de publicar.</p>
+</div>
+
+<form id="publishform">
+{% for p in products %}
+<div class="m2e-card">
+  <div class="cfg-grid">
+    <div>{% if p.image %}<img src="{{ p.image }}">{% endif %}</div>
+    <div>
+      <div class="field">
+        <label>Título del listing</label>
+        <input type="text" name="title_{{ p.id }}" value="{{ p.name }}" maxlength="80">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Precio USD</label>
+          <input type="number" name="price_{{ p.id }}" value="{{ '%.2f'|format(p.price) }}" step="0.01" min="0.99">
+        </div>
+        <div class="field">
+          <label>Cantidad</label>
+          <input type="number" name="qty_{{ p.id }}" value="{{ p.quantity if p.quantity > 0 else 1 }}" min="1">
+        </div>
+        <div class="field">
+          <label>Condición</label>
+          <select name="condition_{{ p.id }}">
+            <option value="NEW" {% if p.saved_condition == 'NEW' %}selected{% endif %}>Nuevo</option>
+            <option value="USED_EXCELLENT" {% if p.saved_condition == 'USED_EXCELLENT' %}selected{% endif %}>Usado - Excelente</option>
+            <option value="USED_VERY_GOOD" {% if p.saved_condition == 'USED_VERY_GOOD' %}selected{% endif %}>Usado - Muy bueno</option>
+            <option value="USED_GOOD" {% if p.saved_condition == 'USED_GOOD' %}selected{% endif %}>Usado - Bueno</option>
+            <option value="FOR_PARTS" {% if p.saved_condition == 'FOR_PARTS' %}selected{% endif %}>Para partes</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Categoría eBay</label>
+        <select name="category_{{ p.id }}">
+          <option value="{{ ebay_config.category_id }}" selected>{{ ebay_config.category_id }} (por defecto)</option>
+        </select>
+        <small style="color:#888;">Sugerencia automática de categoría próximamente.</small>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Envío / Shipping</label>
+          <select name="shipping_{{ p.id }}">
+            <option value="{{ ebay_config.fulfillment_policy_id }}" selected>{{ (ebay_config.fulfillment_policy_name or ebay_config.fulfillment_policy_id)[:40] }}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Devolución / Return</label>
+          <select name="return_{{ p.id }}">
+            <option value="{{ ebay_config.return_policy_id }}" {% if p.saved_return != ebay_config.return_policy_30day_id %}selected{% endif %}>{{ (ebay_config.return_policy_name or ebay_config.return_policy_id)[:40] }}</option>
+            {% if ebay_config.return_policy_30day_id %}
+            <option value="{{ ebay_config.return_policy_30day_id }}" {% if p.saved_return == ebay_config.return_policy_30day_id %}selected{% endif %}>{{ (ebay_config.return_policy_30day_name or '30 días')[:40] }} ({{ ebay_config.return_policy_30day_id }})</option>
+            {% endif %}
+          </select>
+        </div>
+        <div class="field">
+          <label>Pago / Payment</label>
+          <select name="payment_{{ p.id }}">
+            <option value="{{ ebay_config.payment_policy_id }}" selected>{{ (ebay_config.payment_policy_name or ebay_config.payment_policy_id)[:40] }}</option>
+          </select>
+        </div>
+      </div>
+      <input type="hidden" name="product_ids" value="{{ p.id }}">
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<div class="m2e-card">
+  <h3>Políticas eBay</h3>
+  <p style="color:#666;font-size:14px;">Pago: {{ ebay_config.payment_policy_id }} · Envío: {{ ebay_config.fulfillment_policy_id }} · Devolución: {{ ebay_config.return_policy_id }} · <a href="{{ url_for('settings', store_id=store_id) }}">Cambiar</a></p>
+  <button type="submit" class="btn-blue" id="pubbtn">🚀 Publicar {{ products|length }} en eBay</button>
+  <div id="result"></div>
+</div>
+</form>
+
+<script>
+document.getElementById('publishform').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var btn = document.getElementById('pubbtn');
+  var res = document.getElementById('result');
+  btn.disabled = true;
+  res.innerHTML = 'Publicando...';
+  fetch('{{ url_for("publish_configured", store_id=store_id) }}', { method: 'POST', body: new FormData(this) })
+    .then(r => r.json())
+    .then(function(data) {
+      var html = '';
+      (data.results || []).forEach(function(r) {
+        html += r.ok
+          ? '<div class="result-ok">✅ ' + r.name + ' → <a href="https://www.ebay.com/itm/' + r.listing_id + '" target="_blank">' + r.listing_id + '</a></div>'
+          : '<div class="result-err">❌ ' + r.name + ': ' + r.error + '</div>';
+      });
+      res.innerHTML = html;
+      btn.disabled = false;
+    })
+    .catch(function(err) { res.innerHTML = '<div class="result-err">Error: ' + err + '</div>'; btn.disabled = false; });
+});
+</script>
+{% endblock %}

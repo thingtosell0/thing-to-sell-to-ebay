@@ -1,68 +1,100 @@
 {% extends "base.html" %}
 {% block title %}Productos · Thing To Sell To Ebay{% endblock %}
 {% block content %}
-<div class="card">
-  <h2>Productos de tu tienda</h2>
-  <p>Marca los productos que quieres publicar en eBay y haz clic en Publicar.</p>
-  <form id="pubform" method="post" action="{{ url_for('publish', store_id=store_id) }}">
-  <table>
+<style>
+.m2e-card { background:#fff; border-radius:12px; padding:24px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+.toolbar { display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; align-items:center; }
+.search-box { flex:1; min-width:200px; padding:10px 14px; border:1px solid #ddd; border-radius:8px; font-size:15px; }
+.filter-btn { padding:10px 18px; border:1px solid #ddd; border-radius:8px; background:#fff; cursor:pointer; font-size:14px; }
+.filter-btn.active { background:#1a56db; color:#fff; border-color:#1a56db; }
+.prod-table { width:100%; border-collapse:collapse; }
+.prod-table th { text-align:left; padding:10px; border-bottom:2px solid #eee; font-size:13px; color:#666; text-transform:uppercase; }
+.prod-table td { padding:10px; border-bottom:1px solid #f5f5f5; vertical-align:middle; }
+.thumb { width:50px; height:50px; object-fit:cover; border-radius:6px; }
+.badge { display:inline-block; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:600; }
+.badge.pub { background:#e6f4ea; color:#1a7f37; }
+.badge.unpub { background:#fef3e2; color:#b7791f; }
+.btn-blue { background:#1a56db; color:#fff; border:none; border-radius:8px; padding:12px 24px; font-size:15px; font-weight:600; cursor:pointer; }
+.btn-blue:disabled { background:#ccc; cursor:not-allowed; }
+#selcount { font-size:14px; color:#666; }
+</style>
+
+<div class="m2e-card">
+  <h2 style="margin:0 0 4px;">Productos</h2>
+  <p style="color:#666;margin:0 0 16px;">Selecciona productos y haz clic en "Configurar listing" para publicarlos en eBay estilo M2E.</p>
+
+  <div class="toolbar">
+    <input type="text" id="search" class="search-box" placeholder="🔍 Buscar producto..." onkeyup="filterTable()">
+    <button class="filter-btn active" data-f="all" onclick="setFilter('all',this)">Todos</button>
+    <button class="filter-btn" data-f="listed" onclick="setFilter('listed',this)">Publicados</button>
+    <button class="filter-btn" data-f="unlisted" onclick="setFilter('unlisted',this)">No publicados</button>
+  </div>
+
+  <form id="listform" method="get" action="{{ url_for('listing_setup', store_id=store_id) }}">
+  <table class="prod-table" id="prodtable">
+    <thead>
     <tr>
       <th><input type="checkbox" id="selectall"></th>
-      <th></th>
-      <th>Producto</th>
-      <th>SKU</th>
-      <th>Precio</th>
-      <th>Cant.</th>
-      <th>Estado eBay</th>
+      <th></th><th>Producto</th><th>Estado</th><th>SKU</th><th>Precio</th><th>Cant.</th><th>Categorías</th><th>Canales</th>
     </tr>
+    </thead>
+    <tbody>
     {% for p in products %}
-    <tr>
-      <td>{% if not p.published %}<input type="checkbox" name="product_ids" value="{{ p.id }}" class="pcheck">{% endif %}</td>
+    <tr data-name="{{ p.name|lower }}" data-listed="{{ '1' if p.published else '0' }}">
+      <td>{% if not p.published %}<input type="checkbox" name="product_ids" value="{{ p.id }}" class="pcheck" onchange="updateCount()">{% endif %}</td>
       <td>{% if p.image %}<img src="{{ p.image }}" class="thumb">{% endif %}</td>
-      <td>{{ p.name }}{% if not p.enabled %} <small>(deshabilitado)</small>{% endif %}</td>
-      <td>{{ p.sku }}</td>
+      <td><strong>{{ p.name }}</strong>{% if not p.enabled %} <small>(deshabilitado)</small>{% endif %}</td>
+      <td>{% if p.enabled %}<span class="badge pub">Active</span>{% else %}<span class="badge unpub">Disabled</span>{% endif %}</td>
+      <td><small>{{ p.sku }}</small></td>
       <td>${{ "%.2f"|format(p.price) }}</td>
       <td>{{ p.quantity }}</td>
+      <td><small>{{ p.categories }}</small></td>
       <td>
         {% if p.published %}
-        <span class="badge pub">Publicado</span>
+        <span title="Publicado en eBay" style="display:inline-block;background:#1a1a2e;color:#fff;font-size:10px;font-weight:700;padding:5px 7px;border-radius:6px;">ebay</span>
         {% if p.listing_id %}<br><small><a href="https://www.ebay.com/itm/{{ p.listing_id }}" target="_blank">{{ p.listing_id }}</a></small>{% endif %}
         {% else %}
-        <span class="badge unpub">No publicado</span>
+        <span title="No publicado" style="display:inline-block;background:#d0d0d0;color:#888;font-size:10px;font-weight:700;padding:5px 7px;border-radius:6px;">ebay</span>
         {% endif %}
       </td>
     </tr>
     {% endfor %}
+    </tbody>
   </table>
-  <p style="margin-top:15px">
-    <button type="submit" class="btn" id="pubbtn">Publicar seleccionados en eBay</button>
-    <span id="result" style="margin-left:15px"></span>
+  <p style="margin-top:16px;">
+    <button type="submit" class="btn-blue" id="setupbtn" disabled>Configurar listing (<span id="selcount">0</span>)</button>
   </p>
   </form>
 </div>
+
 <script>
+var curFilter = 'all';
+function setFilter(f, btn) {
+  curFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filterTable();
+}
+function filterTable() {
+  var q = document.getElementById('search').value.toLowerCase();
+  document.querySelectorAll('#prodtable tbody tr').forEach(function(row) {
+    var name = row.getAttribute('data-name');
+    var listed = row.getAttribute('data-listed');
+    var okQ = !q || name.indexOf(q) >= 0;
+    var okF = curFilter === 'all' || (curFilter === 'listed' && listed === '1') || (curFilter === 'unlisted' && listed === '0');
+    row.style.display = (okQ && okF) ? '' : 'none';
+  });
+}
+function updateCount() {
+  var n = document.querySelectorAll('.pcheck:checked').length;
+  document.getElementById('selcount').textContent = n;
+  document.getElementById('setupbtn').disabled = n === 0;
+}
 document.getElementById('selectall').addEventListener('change', function(e) {
-  document.querySelectorAll('.pcheck').forEach(c => c.checked = e.target.checked);
-});
-document.getElementById('pubform').addEventListener('submit', function(e) {
-  e.preventDefault();
-  var btn = document.getElementById('pubbtn');
-  var res = document.getElementById('result');
-  btn.disabled = true;
-  res.textContent = 'Publicando...';
-  fetch(this.action, { method: 'POST', body: new FormData(this) })
-    .then(r => r.json())
-    .then(function(data) {
-      var ok = 0, fail = 0;
-      (data.results || []).forEach(function(r) { r.ok ? ok++ : fail++; });
-      res.textContent = 'Listo: ' + ok + ' publicados, ' + fail + ' con error.';
-      if (ok > 0) setTimeout(function(){ location.reload(); }, 2000);
-      btn.disabled = false;
-    })
-    .catch(function(err) {
-      res.textContent = 'Error: ' + err;
-      btn.disabled = false;
-    });
+  document.querySelectorAll('.pcheck').forEach(function(c) {
+    if (c.closest('tr').style.display !== 'none') c.checked = e.target.checked;
+  });
+  updateCount();
 });
 </script>
 {% endblock %}

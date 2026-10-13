@@ -1,31 +1,38 @@
 {% extends "base.html" %}
-{% block title %}Ajustes · Thing To Sell To Ebay{% endblock %}
+{% block title %}Settings / Ajustes · Thing To Sell To Ebay{% endblock %}
 {% block content %}
 <div class="card">
-  <h2>Ajustes de eBay</h2>
-  <p>IDs de tus políticas de eBay (las encuentras en <a href="https://www.ebay.com/bp/manage" target="_blank">ebay.com/bp/manage</a>).</p>
+  <h2>eBay Settings / Ajustes de eBay</h2>
+  <p>Your eBay policy IDs — find them at <a href="https://www.ebay.com/bp/manage" target="_blank">ebay.com/bp/manage</a>.<br>
+  Los IDs de tus políticas de eBay — los encuentras en <a href="https://www.ebay.com/bp/manage" target="_blank">ebay.com/bp/manage</a>.</p>
   <form method="post">
     <div class="form-row">
-      <label>ID de política de pago</label>
-      <input name="payment_policy_id" value="{{ ebay.payment_policy_id }}">
+      <label>Payment policy / Política de pago</label>
+      <input name="payment_policy_id" value="{{ ebay.payment_policy_id }}" placeholder="ID">
+      <input name="payment_policy_name" value="{{ ebay.payment_policy_name or '' }}" placeholder="Name / Nombre" style="margin-top:6px;">
+      {% if ebay.payment_policy_id %}<small style="color:#666;">{{ ebay.payment_policy_name or '' }} ({{ ebay.payment_policy_id }})</small>{% endif %}
     </div>
     <div class="form-row">
-      <label>ID de política de envío</label>
-      <input name="fulfillment_policy_id" value="{{ ebay.fulfillment_policy_id }}">
+      <label>Shipping policy / Política de envío</label>
+      <input name="fulfillment_policy_id" value="{{ ebay.fulfillment_policy_id }}" placeholder="ID">
+      <input name="fulfillment_policy_name" value="{{ ebay.fulfillment_policy_name or '' }}" placeholder="Name / Nombre" style="margin-top:6px;">
+      {% if ebay.fulfillment_policy_id %}<small style="color:#666;">{{ ebay.fulfillment_policy_name or '' }} ({{ ebay.fulfillment_policy_id }})</small>{% endif %}
     </div>
     <div class="form-row">
-      <label>ID de política de devolución</label>
-      <input name="return_policy_id" value="{{ ebay.return_policy_id }}">
+      <label>Return policy / Política de devolución</label>
+      <input name="return_policy_id" value="{{ ebay.return_policy_id }}" placeholder="ID">
+      <input name="return_policy_name" value="{{ ebay.return_policy_name or '' }}" placeholder="Name / Nombre" style="margin-top:6px;">
+      {% if ebay.return_policy_id %}<small style="color:#666;">{{ ebay.return_policy_name or '' }} ({{ ebay.return_policy_id }})</small>{% endif %}
     </div>
     <div class="form-row">
-      <label>Clave de ubicación (merchant location key)</label>
+      <label>Location key / Clave de ubicación</label>
       <input name="merchant_location_key" value="{{ ebay.merchant_location_key }}">
     </div>
     <div class="form-row">
-      <label>ID de categoría eBay</label>
+      <label>eBay category ID / ID de categoría</label>
       <input name="category_id" value="{{ ebay.category_id }}">
     </div>
-    <button type="submit" class="btn">Guardar</button>
+    <button type="submit" class="btn">Save / Guardar</button>
   </form>
 </div>
 {% endblock %}
