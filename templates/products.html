@@ -35,7 +35,7 @@
     <thead>
     <tr>
       <th><input type="checkbox" id="selectall"></th>
-      <th></th><th>Producto</th><th>Estado</th><th>SKU</th><th>Precio</th><th>Cant.</th><th>Categorías</th><th>Canales</th>
+      <th></th><th>{{ 'Product' if lang == 'en' else 'Producto' }}</th><th>{{ 'Status' if lang == 'en' else 'Estado' }}</th><th>SKU</th><th>{{ 'Price' if lang == 'en' else 'Precio' }}</th><th>{{ 'Qty' if lang == 'en' else 'Cant.' }}</th><th>{{ 'Categories' if lang == 'en' else 'Categorías' }}</th><th>{{ 'Channels' if lang == 'en' else 'Canales' }}</th>
     </tr>
     </thead>
     <tbody>
@@ -43,8 +43,8 @@
     <tr data-name="{{ p.name|lower }}" data-listed="{{ '1' if p.published else '0' }}">
       <td>{% if not p.published %}<input type="checkbox" name="product_ids" value="{{ p.id }}" class="pcheck" onchange="updateCount()">{% endif %}</td>
       <td>{% if p.image %}<img src="{{ p.image }}" class="thumb">{% endif %}</td>
-      <td><strong>{{ p.name }}</strong>{% if not p.enabled %} <small>(deshabilitado)</small>{% endif %}</td>
-      <td>{% if p.enabled %}<span class="badge pub">Active</span>{% else %}<span class="badge unpub">Disabled</span>{% endif %}</td>
+      <td><strong>{{ p.name }}</strong>{% if not p.enabled %} <small>{{ '(disabled)' if lang == 'en' else '(deshabilitado)' }}</small>{% endif %}</td>
+      <td>{% if p.enabled %}<span class="badge pub">{{ 'Active' if lang == 'en' else 'Activo' }}</span>{% else %}<span class="badge unpub">{{ 'Disabled' if lang == 'en' else 'Deshabilitado' }}</span>{% endif %}</td>
       <td><small>{{ p.sku }}</small></td>
       <td>${{ "%.2f"|format(p.price) }}</td>
       <td>{{ p.quantity }}</td>
