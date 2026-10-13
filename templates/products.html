@@ -20,14 +20,14 @@
 </style>
 
 <div class="m2e-card">
-  <h2 style="margin:0 0 4px;">Productos</h2>
-  <p style="color:#666;margin:0 0 16px;">Selecciona productos y haz clic en "Configurar listing" para publicarlos en eBay estilo M2E.</p>
+  <h2 style="margin:0 0 4px;">{{ 'Products' if lang == 'en' else 'Productos' }}</h2>
+  <p style="color:#666;margin:0 0 16px;">{{ 'Select products and click "Listing setup" to publish them to eBay, M2E style.' if lang == 'en' else 'Selecciona productos y haz clic en "Configurar listing" para publicarlos en eBay estilo M2E.' }}</p>
 
   <div class="toolbar">
-    <input type="text" id="search" class="search-box" placeholder="🔍 Buscar producto..." onkeyup="filterTable()">
-    <button class="filter-btn active" data-f="all" onclick="setFilter('all',this)">Todos</button>
-    <button class="filter-btn" data-f="listed" onclick="setFilter('listed',this)">Publicados</button>
-    <button class="filter-btn" data-f="unlisted" onclick="setFilter('unlisted',this)">No publicados</button>
+    <input type="text" id="search" class="search-box" placeholder="{{ '🔍 Search products...' if lang == 'en' else '🔍 Buscar producto...' }}" onkeyup="filterTable()">
+    <button class="filter-btn active" data-f="all" onclick="setFilter('all',this)">{{ 'All' if lang == 'en' else 'Todos' }}</button>
+    <button class="filter-btn" data-f="listed" onclick="setFilter('listed',this)">{{ 'Listed' if lang == 'en' else 'Publicados' }}</button>
+    <button class="filter-btn" data-f="unlisted" onclick="setFilter('unlisted',this)">{{ 'Not listed' if lang == 'en' else 'No publicados' }}</button>
   </div>
 
   <form id="listform" method="get" action="{{ url_for('listing_setup', store_id=store_id) }}">

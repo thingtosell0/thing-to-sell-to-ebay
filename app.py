@@ -38,6 +38,20 @@ def read_json_response(response):
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET", secrets.token_hex(32))
 
+@app.context_processor
+def inject_lang():
+    return {"lang": session.get("lang", "es")}
+
+@app.route("/lang/<lang>")
+def set_lang(lang):
+    session["lang"] = "en" if lang == "en" else "es"
+    next_url = request.args.get("next", "/dashboard")
+    store_id = request.args.get("store_id", "")
+    if store_id and "store_id" not in next_url:
+        sep = "&" if "?" in next_url else "?"
+        next_url = f"{next_url}{sep}store_id={store_id}"
+    return redirect(next_url)
+
 # Config from environment
 ECWID_CLIENT_ID = os.environ.get("ECWID_CLIENT_ID", "")
 ECWID_CLIENT_SECRET = os.environ.get("ECWID_CLIENT_SECRET", "")

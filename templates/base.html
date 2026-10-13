@@ -34,9 +34,11 @@
 <body>
 <div class="nav">
   <span class="brand">Thing To Sell To Ebay</span>
-  <a href="{{ url_for('dashboard', store_id=store_id) }}">Panel</a>
-  <a href="{{ url_for('products', store_id=store_id) }}">Productos</a>
-  <a href="{{ url_for('settings', store_id=store_id) }}">Ajustes</a>
+  <a href="{{ url_for('dashboard', store_id=store_id) }}">{{ 'Panel' if lang == 'es' else 'Dashboard' }}</a>
+  <a href="{{ url_for('products', store_id=store_id) }}">{{ 'Productos' if lang == 'es' else 'Products' }}</a>
+  <a href="{{ url_for('settings', store_id=store_id) }}">{{ 'Ajustes' if lang == 'es' else 'Settings' }}</a>
+  <span style="flex:1"></span>
+  <a href="{{ url_for('set_lang', lang='en' if lang == 'es' else 'es', store_id=store_id, next=request.path) }}" style="background:#333; padding:6px 14px; border-radius:6px; font-weight:600;">{{ 'English' if lang == 'es' else 'Español' }}</a>
 </div>
 <div class="container">
 {% block content %}{% endblock %}

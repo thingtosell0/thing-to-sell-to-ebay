@@ -32,49 +32,49 @@
 
 <div class="m2e-card">
   <div style="display:flex;justify-content:space-between;align-items:center;">
-    <h2>Setup Guide</h2>
+    <h2>{{ 'Setup Guide' if lang == 'en' else 'Guía de configuración' }}</h2>
     <span style="color:#999;font-size:20px;">&#8964;</span>
   </div>
-  <p class="sub">By default, the app does not synchronize your inventory to give you full control of your multichannel setup.</p>
-  <span class="badge-done">{{ steps_completed }} / 4 completed</span>
+  <p class="sub">{{ 'By default, the app does not synchronize your inventory to give you full control of your multichannel setup.' if lang == 'en' else 'Por defecto, la app no sincroniza tu inventario para darte control total de tu configuración multicanal.' }}</p>
+  <span class="badge-done">{{ steps_completed }} / 4 {{ 'completed' if lang == 'en' else 'completados' }}</span>
 
   <div class="setup-row {{ 'done' if has_linked else 'pending' }}">
-    <span class="icon">{{ '🙂' if has_linked else '😐' }}</span> Link Products
+    <span class="icon">{{ '🙂' if has_linked else '😐' }}</span> {{ 'Link Products' if lang == 'en' else 'Vincular productos' }}
   </div>
   <div class="setup-row {{ 'done' if has_sync else 'pending' }}">
-    <span class="icon">{{ '🙂' if has_sync else '😐' }}</span> Synchronize Inventory
+    <span class="icon">{{ '🙂' if has_sync else '😐' }}</span> {{ 'Synchronize Inventory' if lang == 'en' else 'Sincronizar inventario' }}
   </div>
   <div class="setup-row {{ 'done' if has_orders else 'pending' }}">
-    <span class="icon">{{ '🙂' if has_orders else '😐' }}</span> Manage Orders
+    <span class="icon">{{ '🙂' if has_orders else '😐' }}</span> {{ 'Manage Orders' if lang == 'en' else 'Gestionar pedidos' }}
   </div>
   <div class="setup-row {{ 'done' if list_new_done else 'pending' }}">
-    <span class="icon">{{ '🙂' if list_new_done else '😟' }}</span> List New Items
+    <span class="icon">{{ '🙂' if list_new_done else '😟' }}</span> {{ 'List New Items' if lang == 'en' else 'Publicar nuevos' }}
   </div>
 
   <div class="list-new-box">
     <div class="list-new-left">
-      <p style="margin:0 0 16px;color:#444;font-size:15px;">Expand your selling horizons and list more products from your Ecwid store to eBay using the button below.</p>
-      <a href="{{ url_for('products', store_id=store_id) }}" class="btn-white">List on eBay</a>
+      <p style="margin:0 0 16px;color:#444;font-size:15px;">{{ 'Expand your selling horizons and list more products from your Ecwid store to eBay using the button below.' if lang == 'en' else 'Expande tus ventas y publica más productos de tu tienda Ecwid en eBay con el botón de abajo.' }}</p>
+      <a href="{{ url_for('products', store_id=store_id) }}" class="btn-white">{{ 'List on eBay' if lang == 'en' else 'Publicar en eBay' }}</a>
     </div>
     <div class="list-new-right">
       <div style="display:flex;justify-content:space-between;font-size:15px;">
-        <span>Products on Ecwid</span><strong>{{ '{:,}'.format(total_products) }}</strong>
+        <span>{{ 'Products on Ecwid' if lang == 'en' else 'Productos en Ecwid' }}</span><strong>{{ '{:,}'.format(total_products) }}</strong>
       </div>
       <div class="progress-wrap">
         <div class="progress-listed" style="width:{{ listed_pct }}%"></div>
         <div class="progress-not" style="width:{{ not_listed_pct }}%"></div>
       </div>
-      <div class="stat-line"><span>Listed <span class="dot green"></span></span><span><strong>{{ listed_pct }}%</strong> ({{ '{:,}'.format(listed_count) }}) 👁</span></div>
-      <div class="stat-line"><span>Not Listed <span class="dot orange"></span></span><span><strong>{{ not_listed_pct }}%</strong> ({{ '{:,}'.format(not_listed_count) }}) 👁</span></div>
+      <div class="stat-line"><span>{{ 'Listed' if lang == 'en' else 'Publicados' }} <span class="dot green"></span></span><span><strong>{{ listed_pct }}%</strong> ({{ '{:,}'.format(listed_count) }}) 👁</span></div>
+      <div class="stat-line"><span>{{ 'Not Listed' if lang == 'en' else 'No publicados' }} <span class="dot orange"></span></span><span><strong>{{ not_listed_pct }}%</strong> ({{ '{:,}'.format(not_listed_count) }}) 👁</span></div>
     </div>
   </div>
 </div>
 
 <div class="m2e-card">
-  <div class="collapse-head"><h2>Listings and Orders Errors</h2><span style="color:#999;font-size:20px;">&#8964;</span></div>
-  <p class="sub">A detailed overview of errors affecting your ebay listings and orders.</p>
-  <span class="pill">{{ listing_errors|length }} listings errors</span>
-  <span class="pill">{{ order_errors|length }} order errors</span>
+  <div class="collapse-head"><h2>{{ 'Listings and Orders Errors' if lang == 'en' else 'Errores de publicaciones y pedidos' }}</h2><span style="color:#999;font-size:20px;">&#8964;</span></div>
+  <p class="sub">{{ 'A detailed overview of errors affecting your ebay listings and orders.' if lang == 'en' else 'Resumen detallado de errores en tus publicaciones y pedidos de eBay.' }}</p>
+  <span class="pill">{{ listing_errors|length }} {{ 'listings errors' if lang == 'en' else 'errores de publicación' }}</span>
+  <span class="pill">{{ order_errors|length }} {{ 'order errors' if lang == 'en' else 'errores de pedido' }}</span>
   {% if listing_errors %}
   <ul style="margin-top:12px;color:#b00;">
     {% for e in listing_errors[:10] %}<li>{{ e }}</li>{% endfor %}
